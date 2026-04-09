@@ -1,7 +1,7 @@
 package banner_test
 
 import (
-	"ascii-art/banner"
+	"ascii-art-web/banner"
 	"os"
 	"path/filepath"
 	"strings"

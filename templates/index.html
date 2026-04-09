@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Art Generator</title>
+    <!-- load terminal-style fonts from google fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* css variables for colors and fonts used across the page */
+        :root {
+            --green: #00ff41;
+            --green-dim: #00c032;
+            --green-dark: #003b00;
+            --green-glow: rgba(0, 255, 65, 0.15);
+            --bg: #0a0a0a;
+            --card: #0f0f0f;
+            --border: #1a3a1a;
+            --text: #c8ffc8;
+            --text-dim: #4a8a4a;
+            --red: #ff4141;
+            --font-mono: 'Share Tech Mono', monospace;
+            --font-display: 'VT323', monospace;
+        }
+
+        /* reset margins and padding for all elements */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* page body - dark background, centered column layout */
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-mono);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            /* horizontal lines to mimic an old crt screen scanline effect */
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.08) 2px,
+                rgba(0,0,0,0.08) 4px
+            );
+        }
+
+        /* header - centered title with flicker animation */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: flicker 6s infinite;
+        }
+
+        /* main title - large glowing green text */
+        header h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vw, 6rem);
+            color: var(--green);
+            text-shadow:
+                0 0 10px var(--green),
+                0 0 30px var(--green),
+                0 0 60px var(--green-dim);
+            letter-spacing: 6px;
+            line-height: 1;
+        }
+
+        /* subtitle text below the title */
+        header p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* blinking underscore cursor appended after the h1 text */
+        header h1::after {
+            content: "_";
+            animation: blink 1s step-end infinite;
+        }
+
+        /* main content card - dark box with green glow border */
+        .card {
+            width: 100%;
+            max-width: 740px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 32px;
+            box-shadow:
+                0 0 0 1px var(--green-dark),
+                0 0 40px var(--green-glow),
+                inset 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        /* small label above each input that looks like a terminal prompt */
+        .prompt-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        /* the $ symbol inside the prompt label is highlighted green */
+        .prompt-label span {
+            color: var(--green);
+        }
+
+        /* wrapper around the text input field */
+        .input-group {
+            margin-bottom: 28px;
+        }
+
+        /* text input field styling */
+        input[type="text"] {
+            width: 100%;
+            background: #000;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--green);
+            color: var(--green);
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            padding: 12px 16px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            letter-spacing: 1px;
+        }
+
+        /* placeholder text inside the input */
+        input[type="text"]::placeholder {
+            color: var(--text-dim);
+        }
+
+        /* glow effect when the input is focused */
+        input[type="text"]:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 12px var(--green-glow), inset 0 0 8px rgba(0,255,65,0.05);
+        }
+
+        /* wrapper around the three banner radio buttons */
+        .banner-group {
+            margin-bottom: 28px;
+        }
+
+        /* row of banner option buttons */
+        .banner-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        /* each banner option looks like a button, not a radio input */
+        .banner-options label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            background: #000;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            flex: 1;
+            justify-content: center;
+        }
+
+        /* highlight the banner option when hovered */
+        .banner-options label:hover {
+            border-color: var(--green-dim);
+            color: var(--green);
+            background: var(--green-dark);
+        }
+
+        /* hide the native radio button circle, we style the label instead */
+        .banner-options input[type="radio"] {
+            display: none;
+        }
+
+        /* make the text green when a radio is selected */
+        .banner-options input[type="radio"]:checked + span {
+            color: var(--green);
+        }
+
+        /* highlight the whole label box when the radio inside it is selected */
+        .banner-options label:has(input[type="radio"]:checked) {
+            border-color: var(--green);
+            color: var(--green);
+            background: var(--green-dark);
+            box-shadow: 0 0 10px var(--green-glow);
+        }
+
+        /* submit button - full width, transparent with green border */
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 1px solid var(--green);
+            color: var(--green);
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* light sweep that moves across the button on hover */
+        button[type="submit"]::before {
+            content: "";
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, var(--green-glow), transparent);
+            transition: left 0.4s;
+        }
+
+        /* dark green background on hover */
+        button[type="submit"]:hover {
+            background: var(--green-dark);
+            box-shadow: 0 0 20px var(--green-glow);
+        }
+
+        /* trigger the light sweep animation on hover */
+        button[type="submit"]:hover::before {
+            left: 100%;
+        }
+
+        /* slightly shrink the button when clicked */
+        button[type="submit"]:active {
+            transform: scale(0.99);
+        }
+
+        /* horizontal line dividing the form from the result */
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        /* wrapper around the ascii art result */
+        .result-box {
+            margin-top: 8px;
+        }
+
+        /* row containing the blinking dot and "output" label */
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        /* output label text next to the dot */
+        .result-header span {
+            font-size: 0.75rem;
+            color: var(--green);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* small blinking green dot shown next to the output label */
+        .result-header .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            animation: blink 1.2s ease-in-out infinite;
+        }
+
+        /* pre tag displays the ascii art result with exact spacing preserved */
+        pre {
+            background: #000;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--green);
+            padding: 20px;
+            color: var(--green);
+            font-family: var(--font-mono);
+            font-size: clamp(0.55rem, 1.5vw, 0.85rem);
+            overflow-x: auto;
+            line-height: 1.2;
+            white-space: pre;
+            text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
+            animation: fadeIn 0.4s ease;
+        }
+
+        /* error box shown when the server returns an error */
+        .error-box {
+            background: rgba(255, 65, 65, 0.07);
+            border: 1px solid var(--red);
+            border-left: 3px solid var(--red);
+            padding: 14px 18px;
+            color: var(--red);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            margin-top: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* adds "ERR > " prefix before the error message */
+        .error-box::before {
+            content: "ERR > ";
+            font-weight: bold;
+        }
+
+        /* footer at the bottom of the page */
+        footer {
+            margin-top: 40px;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        /* blink - alternates opacity to simulate a blinking cursor or dot */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* flicker - briefly drops opacity to simulate an old monitor flicker */
+        @keyframes flicker {
+            0%, 95%, 100% { opacity: 1; }
+            96% { opacity: 0.85; }
+            97% { opacity: 1; }
+            98% { opacity: 0.9; }
+            99% { opacity: 1; }
+        }
+
+        /* fadein - slides content up and fades it in when it appears */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- page header with the title -->
+    <header>
+        <h1>ASCII ART</h1>
+        <p>// terminal text renderer v1.0 //</p>
+    </header>
+
+    <!-- main card containing the form and result -->
+    <div class="card">
+
+        <!-- form sends a POST request to /ascii-art when submitted -->
+        <form action="/ascii-art" method="POST">
+
+            <!-- text input where the user types what they want to convert -->
+            <div class="input-group">
+                <p class="prompt-label"><span>$</span> enter_text</p>
+                <input
+                    type="text"
+                    name="text"
+                    placeholder="type your text here..."
+                    autocomplete="off"
+                    required
+                />
+            </div>
+
+            <!-- radio buttons to choose between the three banner styles -->
+            <div class="banner-group">
+                <p class="prompt-label"><span>$</span> select_banner</p>
+                <div class="banner-options">
+
+                    <!-- standard banner is selected by default -->
+                    <label>
+                        <input type="radio" name="banner" value="standard" checked />
+                        <span>Standard</span>
+                    </label>
+
+                    <label>
+                        <input type="radio" name="banner" value="shadow" />
+                        <span>Shadow</span>
+                    </label>
+
+                    <label>
+                        <input type="radio" name="banner" value="thinkertoy" />
+                        <span>Thinkertoy</span>
+                    </label>
+
+                </div>
+            </div>
+
+            <!-- submit button triggers the POST request -->
+            <button type="submit">[ Generate ]</button>
+
+        </form>
+
+        <!-- result section - only rendered by go template if .Result is not empty -->
+        {{if .Result}}
+            <hr class="divider">
+            <div class="result-box">
+                <!-- output label with blinking dot -->
+                <div class="result-header">
+                    <div class="dot"></div>
+                    <span>Output</span>
+                </div>
+                <!-- pre tag keeps all spaces and newlines exactly as the server sent them -->
+                <pre>{{.Result}}</pre>
+            </div>
+        {{end}}
+
+        <!-- error section - only rendered by go template if .Error is not empty -->
+        {{if .Error}}
+            <div class="error-box">{{.Error}}</div>
+        {{end}}
+
+    </div>
+
+    <!-- page footer -->
+    <footer>
+        <p>ascii-art-web &mdash; powered by Go net/http</p>
+    </footer>
+
+</body>
+</html>

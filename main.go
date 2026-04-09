@@ -2,18 +2,17 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strings"
 	"html/template"
-  "net/http"
+	"net/http"
+	"strings"
 
 	"ascii-art-web/banner"
 )
 
 // data box to be sent to HTML template
 type PageData struct {
-	result      string
-	error       string
+	Result string
+	Error  string
 }
 
 // regestrying our to endpoints
@@ -28,21 +27,21 @@ func main() {
 	}
 }
 
-//  serves the homepage with the input form
+// serves the homepage with the input form
 func hompage(w http.ResponseWriter, r *http.Request) {
 	// to reject any path other than "/"
 	if r.URL.Path != "/" {
 		http.Error(w, "404 - page not found", http.StatusNotFound)
-			return
+		return
 	}
 	// to allow GET method only
 	if r.Method != http.MethodGet {
 		http.Error(w, "405 - Method Not Allowed", http.StatusMethodNotAllowed)
-			return
+		return
 	}
 
 	// to load the template
-	tmpl, err := template.ParseFiles("template/index.html")
+	tmpl, err := template.ParseFiles("templates/index.html")
 	if err != nil {
 		http.Error(w, "404 - Template not found", http.StatusNotFound)
 		return
@@ -51,26 +50,26 @@ func hompage(w http.ResponseWriter, r *http.Request) {
 	// for pages withn empty data
 	w.WriteHeader(http.StatusOK)
 	tmpl.Execute(w, PageData{})
-	}
+}
 
 // to load ascii art and render it
 func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 	// to allow only POST method
-	if r.Method != http.MethodPost{
+	if r.Method != http.MethodPost {
 		http.Error(w, "400 - Bad Request", http.StatusBadRequest)
 		return
 	}
 	// read value form
 	text := r.FormValue("text")
-	banner := r.FormValue("banner")
+	bannerName := r.FormValue("banner")
 	// validate input
-	if text == "" || banner == "" {
+	if text == "" || bannerName == "" {
 		http.Error(w, "400 - Bad Request - missing input", http.StatusBadRequest)
 		return
 	}
 
 	// allow only the three valid banner
-	validBanners :=  map[string]bool{
+	validBanners := map[string]bool{
 		"standard":   true,
 		"shadow":     true,
 		"thinkertoy": true,
@@ -92,14 +91,14 @@ func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// load template
-	tmpl, err := template.ParseFiles("template/index.html")
+	tmpl, err := template.ParseFiles("templates/index.html")
 	if err != nil {
 		http.Error(w, "404 - Template not found", http.StatusNotFound)
 		return
 	}
 	// send result back to user
 	w.WriteHeader(http.StatusOK)
-	tmpl.Execute(w, PageData{result: result})
+	tmpl.Execute(w, PageData{Result: result})
 }
 
 // to generate ascii art from input text and banner data
@@ -107,7 +106,7 @@ func generateAsciiArt(input string, chars [][]string) (string, error) {
 	var output strings.Builder
 
 	// replace literal \n with real newlines
-	input = strings.ReplaceAll(input, '\n', "\n")
+	input = strings.ReplaceAll(input, `\n`, "\n")
 	lines := strings.Split(input, "\n")
 
 	for i, line := range lines {
@@ -119,22 +118,20 @@ func generateAsciiArt(input string, chars [][]string) (string, error) {
 		}
 
 		// validate every character is in the supported ASCII range
-			for _, char := range line {
-		index := (int(char) - 32)
-		if index < 0 || index > 94 {
-			return "", fmt.Errorf("character out of range")
-	}
-}
+		for _, ch := range line {
+			index := int(ch) - 32
+			if index < 0 || index > 94 {
+				return "", fmt.Errorf("character out of range")
+			}
+		}
 
-// build the ascii art row by row
-for row := 0; row < 8; row++ {
-	for _, ch := range line {
-		output.WriteString(chars[int(ch)-32][row])
-	}
+		// build the ascii art row by row
+		for row := 0; row < 8; row++ {
+			for _, ch := range line {
+				output.WriteString(chars[int(ch)-32][row])
+			}
 			output.WriteString("\n")
 		}
 	}
-
-	return output.string(), nil
+	return output.String(), nil
 }
-

@@ -1,0 +1,80 @@
+# ASCII Art Web
+
+## Description
+A web-based GUI version of the ASCII Art project. It runs a Go HTTP server that serves an interactive webpage where users can type any text, choose a banner style (standard, shadow, or thinkertoy), and see their text rendered as ASCII art directly in the browser. No terminal needed.
+
+## Authors
+- Your Name Here
+
+## Usage
+
+### Requirements
+- Go 1.21 or higher
+
+### Project Structure
+```
+ascii-art-web/
+├── main.go                  ← web server
+├── go.mod                   ← Go module file
+├── banner/
+│   ├── banner.go            ← banner loading logic
+│   ├── standard.txt         ← standard font
+│   ├── shadow.txt           ← shadow font
+│   └── thinkertoy.txt       ← thinkertoy font
+├── templates/
+│   └── index.html           ← HTML page served to the browser
+└── README.md
+```
+
+### How to Run
+1. Open your terminal in the project root folder
+2. Run the server:
+```bash
+go run .
+```
+3. Open your browser and visit:
+```
+http://localhost:8080
+```
+4. Type your text, pick a banner, and click **Generate**!
+
+### Trying `\n` for new lines
+You can type `\n` in the text box to create a new line in your ASCII art output. For example:
+```
+Hello\nWorld
+```
+
+## Implementation Details
+
+### Algorithm
+
+**Banner File Format:**
+Each `.txt` banner file represents all printable ASCII characters (32–126). Every character is exactly 8 lines tall, followed by one blank separator line — so each character takes up 9 lines in the file.
+
+**Character Lookup (`banner/banner.go`):**
+The `Load()` function reads and parses the banner file into a 2D slice:
+```
+chars[characterIndex][row] = one art row of that character
+```
+The character index is calculated as:
+```
+index = ASCII value of character - 32
+```
+For example `A` (ASCII 65) → index 33.
+
+**Building the Output (`main.go` → `generateASCIIArt`):**
+The output is assembled row by row. For each of the 8 rows, every character in the input line contributes one row of its art side by side. After all characters in a row, a newline is added. This produces the final multi-line ASCII art string.
+
+**HTTP Flow:**
+| Method | Route | What it does |
+|--------|-------|-------------|
+| GET | `/` | Serves the HTML form page |
+| POST | `/ascii-art` | Receives text + banner, returns ASCII art result |
+
+**HTTP Status Codes:**
+| Code | Meaning | When returned |
+|------|---------|---------------|
+| 200 | OK | Request succeeded |
+| 400 | Bad Request | Missing, empty, or invalid input |
+| 404 | Not Found | Template or banner file missing |
+| 500 | Internal Server Error | Unsupported character or unexpected error |
