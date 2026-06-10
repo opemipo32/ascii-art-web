@@ -115,7 +115,7 @@
         }
 
         /* text input field styling */
-        input[type="text"] {
+        textarea {
             width: 100%;
             background: #000;
             border: 1px solid var(--border);
@@ -130,12 +130,12 @@
         }
 
         /* placeholder text inside the input */
-        input[type="text"]::placeholder {
+        textarea::placeholder {
             color: var(--text-dim);
         }
 
         /* glow effect when the input is focused */
-        input[type="text"]:focus {
+        textarea:focus {
             border-color: var(--green);
             box-shadow: 0 0 12px var(--green-glow), inset 0 0 8px rgba(0,255,65,0.05);
         }
@@ -359,13 +359,12 @@
             <!-- text input where the user types what they want to convert -->
             <div class="input-group">
                 <p class="prompt-label"><span>$</span> enter_text</p>
-                <input
-                    type="text"
+                <textarea
                     name="text"
                     placeholder="type your text here..."
                     autocomplete="off"
-                    required
-                />
+                    required></textarea>
+                    
             </div>
 
             <!-- radio buttons to choose between the three banner styles -->

@@ -159,6 +159,7 @@ func generateAsciiArt(input string, chars [][]string) (string, error) {
 
 	// Replace literal \n with real newlines
 	input = strings.ReplaceAll(input, `\n`, "\n")
+	input = strings.ReplaceAll(input, "\r\n", "\n")
 	lines := strings.Split(input, "\n")
 
 	for i, line := range lines {
